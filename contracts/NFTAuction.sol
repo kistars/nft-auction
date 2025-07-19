@@ -5,7 +5,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import "hardhat/console.sol";
 
 // NFT拍卖
 contract NFTAuction is UUPSUpgradeable {
@@ -32,7 +31,7 @@ contract NFTAuction is UUPSUpgradeable {
     event BidPlaced(uint256 indexed auctionId, address indexed bidder, uint256 amount, address tokenAddress);
     event AuctionEnded(uint256 indexed auctionId, address winner, uint256 amount, address tokenAddress);
 
-    function initialize() public initializer {
+    function initialize(address _admin) public initializer {
         admin = msg.sender;
     }
 
@@ -58,6 +57,7 @@ contract NFTAuction is UUPSUpgradeable {
         require(msg.sender == admin, "Only admin can create");
         require(_duration > 0 && _startPrice > 0, "invalid auction params");
 
+        // 转入NFT
         IERC721(_nftContract).safeTransferFrom(msg.sender, address(this), _tokenId);
 
         auctions[nextAuctionId] = Auction({
@@ -139,6 +139,7 @@ contract NFTAuction is UUPSUpgradeable {
         emit AuctionEnded(_auctionId, auction.highestBidder, auction.highestBid, auction.tokenAddress);
     }
 
+    // uups，只有管理员才能升级合约
     function _authorizeUpgrade(address) internal view override {
         require(msg.sender == admin, "only admin can upgrade");
     }

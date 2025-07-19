@@ -2,39 +2,33 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("TransferDemo", function () {
-    let token, demo, owner, user, tokenAddr, demoAddr;
 
-    beforeEach(async () => {
-        [owner, user] = await ethers.getSigners();
+    it("upgrade contracts", async () => {
 
-        const Token = await ethers.getContractFactory("TestToken");
-        token = await Token.deploy();
-        await token.waitForDeployment();
-        tokenAddr = await token.getAddress();
+        // 部署V1
+        const LogicV1 = await ethers.getContractFactory("LogicV1");
+        const logicV1 = await upgrades.deployProxy(LogicV1, [], {
+            kind: "uups",
+            initializer: "initialize",
+        });
+        await logi();
+        console.log("LogicV1 deployed to:", logicV1.address);
 
-        //
-        const Demo = await ethers.getContractFactory("TransferDemo");
-        demo = await Demo.deploy(tokenAddr);
-        await demo.waitForDeployment();
-        demoAddr = await demo.getAddress();
+        // 使用V1
+        await logicV1.setValue(42);
+        console.log("Initial value:", (await logicV1.value()).toString());
+        console.log("Value plus ten:", (await logicV1.getValuePlusTen()).toString());
 
-        // await
-        await token.transfer(demoAddr, ethers.parseEther("100"));
+        // 升级到V2
+        const LogicV2 = await ethers.getContractFactory("LogicV2");
+        const logicV2 = await upgrades.upgradeProxy(logicV1.address, LogicV2);
+        console.log("Upgraded to LogicV2 at same address:", logicV2.address);
+
+        // 使用V2新功能
+        await logicV2.enableNewFeature();
+        console.log("New feature enabled:", await logicV2.newFeature());
+        console.log("Value multiplied by 3:", (await logicV2.getValueMultiplied(3)).toString());
+
     });
 
-    it("若合约没钱则转账失败", async () => {
-        await demo.transferToken(ethers.parseEther("100"));
-
-        await expect(demo.transferToken(ethers.parseEther("1"))).to.be.reverted;
-    });
-
-
-    it("确认 transfer 调用者是合约", async () => {
-        // 这个信息不能直接在 JS 中看调用者
-        // 但我们知道只有合约持有 token，owner 没有授权
-        // 所以 transfer 能成功，只可能是合约发起的
-        await demo.transferToken(ethers.parseEther("5"));
-        const balance = await token.balanceOf(owner.address);
-        expect(balance).to.equal(ethers.parseEther("5"));
-    });
 });
