@@ -4,15 +4,15 @@ pragma solidity ^0.8.0;
 import "./NFTAuction.sol";
 
 contract NFTFactory {
-    NFTAuction[] auctionInstance;
+    address[] public auctionAddrs;
 
-    function createAuction(address ccipRouter) public {
+    function createAuction() public {
         NFTAuction auction = new NFTAuction();
         auction.initialize(msg.sender);
-        auctionInstance.push(auction);
+        auctionAddrs.push(address(auction));
     }
 
-    function getAuctionInstance(uint256 auctionId) public view returns (NFTAuction) {
-        return auctionInstance[auctionId];
+    function getAuctionInstance(uint256 auctionId) public view returns (address) {
+        return auctionAddrs[auctionId];
     }
 }
