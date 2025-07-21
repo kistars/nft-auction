@@ -32,7 +32,7 @@ contract NFTAuction is UUPSUpgradeable {
     event AuctionEnded(uint256 indexed auctionId, address winner, uint256 amount, address tokenAddress);
 
     function initialize(address _admin) public initializer {
-        admin = msg.sender;
+        admin = _admin;
     }
 
     function setPriceFeed(address tokenAddress, address _priceFeed) public {
